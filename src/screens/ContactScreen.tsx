@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { INSTITUTION_INFO, FAQS } from '../data/coursesData';
+import { useGoogleSheets } from '../context/GoogleSheetsContext';
 import {
   Phone,
   MessageSquare,
@@ -9,8 +10,7 @@ import {
   CheckCircle2,
   ChevronDown,
   Send,
-  Calendar,
-  ExternalLink,
+  RefreshCw,
 } from 'lucide-react';
 
 interface ContactScreenProps {
@@ -20,15 +20,56 @@ interface ContactScreenProps {
 export const ContactScreen: React.FC<ContactScreenProps> = ({ onOpenEnquire }) => {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [course, setCourse] = useState('DCA Diploma');
   const [message, setMessage] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const { isConnected, syncInquiry } = useGoogleSheets();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !phone) return;
+    if (!name.trim() || !phone.trim()) return;
+    setIsSubmitting(true);
+
+    const record = {
+      name: name.trim(),
+      phone: phone.trim(),
+      course,
+      message: message.trim(),
+      source: 'Contact Page Form',
+    };
+
+    // 1. Always save to 24/7 database first
+    try {
+      await fetch('/api/inquiries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(record),
+      });
+    } catch (err) {
+      console.error('Failed to post inquiry to server database:', err);
+    }
+
+    // 2. If Google Sheets is authenticated on this browser, append inquiry directly as well
+    if (isConnected) {
+      try {
+        await syncInquiry(record);
+      } catch (err) {
+        console.error('Silent Google Sheets sync error:', err);
+      }
+    }
+
     setFormSubmitted(true);
+    setIsSubmitting(false);
+  };
+
+  const handleResetForm = () => {
+    setFormSubmitted(false);
+    setName('');
+    setPhone('');
+    setMessage('');
   };
 
   return (
@@ -175,7 +216,6 @@ export const ContactScreen: React.FC<ContactScreenProps> = ({ onOpenEnquire }) =
               <ul className="text-xs text-[#40474f] space-y-1.5 leading-relaxed">
                 <li>• <strong>By Metro:</strong> Miyapur Metro Station (Terminal Red Line) is just 1.2 km away. Autos and feeder buses are available every 2 minutes.</li>
                 <li>• <strong>By Bus:</strong> Alight at Miyapur Bus Stop / Allwyn X Roads. The institute is situated right on NH65.</li>
-  
               </ul>
             </div>
           </div>
@@ -193,25 +233,34 @@ export const ContactScreen: React.FC<ContactScreenProps> = ({ onOpenEnquire }) =
               </div>
 
               {formSubmitted ? (
-                <div className="p-6 rounded-2xl bg-[#cde5ff]/40 border border-[#94ccff] text-center space-y-3">
-                  <div className="w-12 h-12 rounded-full bg-[#00507d] text-[#ffffff] flex items-center justify-center mx-auto">
-                    <CheckCircle2 className="w-6 h-6" />
+                <div className="p-6 md:p-8 rounded-2xl bg-[#cde5ff]/40 border border-[#94ccff] text-center space-y-4">
+                  <div className="w-14 h-14 rounded-full bg-[#00507d] text-[#ffffff] flex items-center justify-center mx-auto shadow-sm">
+                    <CheckCircle2 className="w-7 h-7" />
                   </div>
-                  <h3 className="text-lg font-bold text-[#001d32]">
-                    Inquiry Received Successfully!
-                  </h3>
-                  <p className="text-xs text-[#004b74] max-w-md mx-auto">
-                    Thank you, <strong>{name}</strong>. Our faculty counselor will reach out to you shortly on <strong>{phone}</strong>.
-                  </p>
-                  <div className="pt-2">
+                  <div className="space-y-1">
+                    <h3 className="text-xl font-bold text-[#001d32]">
+                      Inquiry Received Successfully!
+                    </h3>
+                    <p className="text-sm text-[#004b74] max-w-md mx-auto">
+                      Thank you, <strong>{name}</strong>. Our faculty counselor will reach out to you shortly on <strong>{phone}</strong> regarding <strong>{course}</strong>.
+                    </p>
+                  </div>
+
+                  <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
                     <a
                       href={`https://wa.me/919849174718?text=Hi%20Keerthi%20Infotech,%20I%20just%20sent%20an%20enquiry%20for%20${encodeURIComponent(course)}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0369a1] text-[#ffffff] text-xs font-bold"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0369a1] text-[#ffffff] text-xs font-bold hover:bg-[#025684] transition-colors shadow-xs"
                     >
                       Connect on WhatsApp Now
                     </a>
+                    <button
+                      onClick={handleResetForm}
+                      className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-[#c0c7d1] bg-[#ffffff] text-[#131b2e] text-xs font-bold hover:bg-[#f2f3ff] transition-colors cursor-pointer"
+                    >
+                      Submit Another Inquiry
+                    </button>
                   </div>
                 </div>
               ) : (
@@ -278,13 +327,25 @@ export const ContactScreen: React.FC<ContactScreenProps> = ({ onOpenEnquire }) =
                     />
                   </div>
 
-                  <button
-                    type="submit"
-                    className="w-full py-3 rounded-xl bg-[#00507d] text-[#ffffff] font-bold text-sm hover:bg-[#0369a1] transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <Send className="w-4 h-4" />
-                    Submit Inquiry & Request Callback
-                  </button>
+                  <div className="flex items-center justify-between gap-3 pt-1">
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full py-3 rounded-xl bg-[#00507d] text-[#ffffff] font-bold text-sm hover:bg-[#0369a1] transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <span>Sending Inquiry...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4" />
+                          <span>Submit Inquiry & Request Callback</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </form>
               )}
             </div>

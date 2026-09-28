@@ -1,7 +1,7 @@
 import React from 'react';
 import { ScreenType } from '../types';
 import { INSTITUTION_INFO } from '../data/coursesData';
-import { Phone, MessageSquare, Mail, MapPin, CheckCircle2 } from 'lucide-react';
+import { Phone, MessageSquare, Mail, MapPin, CheckCircle2, Lock } from 'lucide-react';
 
 interface FooterProps {
   onNavigate: (screen: ScreenType) => void;
@@ -165,6 +165,14 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenEnquire }) => 
             </span>
             <span className="hidden sm:inline">•</span>
             <span className="font-mono text-xs">{INSTITUTION_INFO.regNo}</span>
+            <span className="hidden sm:inline">•</span>
+            <button
+              onClick={() => handleNav('admin')}
+              className="inline-flex items-center gap-1 text-xs text-[#5f6368] hover:text-[#00507d] transition-colors cursor-pointer hover:underline"
+            >
+              <Lock className="w-3 h-3" />
+              <span>Staff Portal</span>
+            </button>
           </div>
         </div>
       </div>

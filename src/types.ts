@@ -1,4 +1,4 @@
-export type ScreenType = 'about' | 'courses' | 'home' | 'contact';
+export type ScreenType = 'about' | 'courses' | 'home' | 'contact' | 'admin';
 
 export interface TimelineEra {
   id: string;

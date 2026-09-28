@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, CheckCircle2, Phone, Calendar, BookOpen, Send } from 'lucide-react';
+import { X, CheckCircle2, Phone, Calendar, BookOpen, Send, FileSpreadsheet, ExternalLink, RefreshCw } from 'lucide-react';
 import { COURSES_CATALOG, INSTITUTION_INFO } from '../data/coursesData';
+import { useGoogleSheets } from '../context/GoogleSheetsContext';
 
 interface EnquiryModalProps {
   isOpen: boolean;
@@ -19,13 +20,49 @@ export const EnquiryModal: React.FC<EnquiryModalProps> = ({
   const [courseId, setCourseId] = useState(defaultCourseId || 'dca-diploma');
   const [notes, setNotes] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { isConnected, spreadsheetUrl, syncInquiry } = useGoogleSheets();
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const selectedCourse = COURSES_CATALOG.find((c) => c.id === courseId) || COURSES_CATALOG[0];
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !phone.trim()) return;
+    setIsSubmitting(true);
+
+    const record = {
+      name: name.trim(),
+      phone: phone.trim(),
+      course: selectedCourse.title,
+      message: notes.trim(),
+      source: 'Admission Enquiry Modal',
+    };
+
+    // 1. Always save to 24/7 database first
+    try {
+      await fetch('/api/inquiries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(record),
+      });
+    } catch (err) {
+      console.error('Failed to post inquiry to server database:', err);
+    }
+
+    // 2. If Google Sheets is connected in this browser session, sync directly
+    if (isConnected) {
+      try {
+        await syncInquiry(record);
+      } catch (err) {
+        console.error('Direct Google Sheets sync error:', err);
+      }
+    }
+
     setIsSubmitted(true);
+    setIsSubmitting(false);
   };
 
   const handleReset = () => {
@@ -35,8 +72,6 @@ export const EnquiryModal: React.FC<EnquiryModalProps> = ({
     setNotes('');
     onClose();
   };
-
-  const selectedCourse = COURSES_CATALOG.find((c) => c.id === courseId) || COURSES_CATALOG[0];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#131b2e]/60 backdrop-blur-xs animate-in fade-in duration-150">
@@ -186,10 +221,20 @@ export const EnquiryModal: React.FC<EnquiryModalProps> = ({
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="w-full py-3 rounded-xl bg-[#00507d] text-[#ffffff] font-bold text-sm hover:bg-[#0369a1] transition-all active:scale-[0.99] shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                  disabled={isSubmitting}
+                  className="w-full py-3 rounded-xl bg-[#00507d] text-[#ffffff] font-bold text-sm hover:bg-[#0369a1] transition-all active:scale-[0.99] shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
                 >
-                  <Send className="w-4 h-4" />
-                  Submit Request (Instant Counselor Call)
+                  {isSubmitting ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Saving Enquiry...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      <span>Submit Request (Instant Counselor Call)</span>
+                    </>
+                  )}
                 </button>
               </div>
 

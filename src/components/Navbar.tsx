@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ScreenType } from '../types';
 import { INSTITUTION_INFO } from '../data/coursesData';
-import { Menu, X, Phone, User, ExternalLink } from 'lucide-react';
+import { Menu, X, Phone, User, ExternalLink, Lock } from 'lucide-react';
 
 interface NavbarProps {
   currentScreen: ScreenType;
@@ -55,6 +55,13 @@ export const Navbar: React.FC<NavbarProps> = ({
             <Phone className="w-3.5 h-3.5" />
             +91 98491 74718
           </a>
+          <button
+            onClick={() => handleLinkClick('admin')}
+            className="flex items-center gap-1 text-[11px] font-semibold bg-[#ffffff]/15 hover:bg-[#ffffff]/25 text-[#ffffff] px-2.5 py-0.5 rounded-md transition-colors cursor-pointer"
+          >
+            <Lock className="w-3 h-3 text-[#94ccff]" />
+            <span>Staff Portal</span>
+          </button>
         </div>
       </div>
 
@@ -93,21 +100,22 @@ export const Navbar: React.FC<NavbarProps> = ({
         </nav>
 
         {/* Action Button & Avatar */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            onClick={() => handleLinkClick('admin')}
+            title="Staff Admissions & Google Sheets Portal"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#c0c7d1] text-xs font-semibold text-[#131b2e] hover:bg-[#f2f3ff] transition-colors focus:outline-hidden cursor-pointer"
+            aria-label="Staff Admissions Portal"
+          >
+            <Lock className="w-3.5 h-3.5 text-[#00507d]" />
+            <span className="hidden sm:inline">Staff Portal</span>
+          </button>
+
           <button
             onClick={onOpenEnquire}
             className="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-[#00507d] text-[#ffffff] font-medium text-[14px] hover:bg-[#0369a1] transition-all active:scale-[0.98] shadow-sm cursor-pointer"
           >
             Enquire Now
-          </button>
-
-          <button
-            onClick={() => handleLinkClick('contact')}
-            title="Miyapur Campus Desk"
-            className="w-8 h-8 rounded-full bg-[#00507d] text-[#ffffff] flex items-center justify-center hover:bg-[#0369a1] transition-colors focus:outline-hidden"
-            aria-label="User profile or contact"
-          >
-            <User className="w-4 h-4" />
           </button>
 
           {/* Mobile Hamburger Button */}
@@ -152,6 +160,13 @@ export const Navbar: React.FC<NavbarProps> = ({
               className="w-full py-2.5 rounded-xl bg-[#00507d] text-[#ffffff] font-medium text-center hover:bg-[#0369a1]"
             >
               Enquire for Admission / Lab Visit
+            </button>
+            <button
+              onClick={() => handleLinkClick('admin')}
+              className="w-full py-2.5 rounded-xl border border-[#c0c7d1] bg-[#faf8ff] text-[#131b2e] text-xs font-bold text-center hover:bg-[#f2f3ff] flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Lock className="w-3.5 h-3.5 text-[#00507d]" />
+              <span>Staff Admissions Portal</span>
             </button>
             <div className="text-xs text-[#40474f] text-center pt-1">
               Call: <a href="tel:+919849174718" className="font-bold text-[#00507d]">+91 98491 74718</a> • Miyapur, Hyderabad

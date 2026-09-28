@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { ScreenType, CourseItem } from './types';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
-import { WhatsAppWidget } from './components/WhatsAppWidget';
 import { EnquiryModal } from './components/EnquiryModal';
 import { SyllabusModal } from './components/SyllabusModal';
 import { AboutScreen } from './screens/AboutScreen';
 import { HomeScreen } from './screens/HomeScreen';
 import { CoursesScreen } from './screens/CoursesScreen';
 import { ContactScreen } from './screens/ContactScreen';
+import { AdminPortalScreen } from './screens/AdminPortalScreen';
+import { GoogleSheetsProvider } from './context/GoogleSheetsContext';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<ScreenType>('home');
@@ -36,69 +37,72 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#faf8ff] text-[#131b2e] font-sans antialiased selection:bg-[#cde5ff] selection:text-[#001d32]">
-      {/* Top Fixed Navigation */}
-      <Navbar
-        currentScreen={currentScreen}
-        onNavigate={handleNavigate}
-        onOpenEnquire={() => handleOpenEnquire()}
-      />
+    <GoogleSheetsProvider>
+      <div className="min-h-screen flex flex-col bg-[#faf8ff] text-[#131b2e] font-sans antialiased selection:bg-[#cde5ff] selection:text-[#001d32]">
+        {/* Top Fixed Navigation */}
+        <Navbar
+          currentScreen={currentScreen}
+          onNavigate={handleNavigate}
+          onOpenEnquire={() => handleOpenEnquire()}
+        />
 
-      {/* Main Content View with padding for fixed header */}
-      <main className="flex-1 pt-20 md:pt-28">
-        {currentScreen === 'about' && (
-          <AboutScreen
-            onNavigate={handleNavigate}
-            onOpenEnquire={handleOpenEnquire}
-          />
-        )}
+        {/* Main Content View with padding for fixed header */}
+        <main className="flex-1 pt-20 md:pt-28">
+          {currentScreen === 'about' && (
+            <AboutScreen
+              onNavigate={handleNavigate}
+              onOpenEnquire={handleOpenEnquire}
+            />
+          )}
 
-        {currentScreen === 'home' && (
-          <HomeScreen
-            onNavigate={handleNavigate}
-            onOpenEnquire={handleOpenEnquire}
-            onSelectCourseSyllabus={handleSelectCourseSyllabus}
-          />
-        )}
+          {currentScreen === 'home' && (
+            <HomeScreen
+              onNavigate={handleNavigate}
+              onOpenEnquire={handleOpenEnquire}
+              onSelectCourseSyllabus={handleSelectCourseSyllabus}
+            />
+          )}
 
-        {currentScreen === 'courses' && (
-          <CoursesScreen
-            onNavigate={handleNavigate}
-            onOpenEnquire={handleOpenEnquire}
-            onSelectCourseSyllabus={handleSelectCourseSyllabus}
-          />
-        )}
+          {currentScreen === 'courses' && (
+            <CoursesScreen
+              onNavigate={handleNavigate}
+              onOpenEnquire={handleOpenEnquire}
+              onSelectCourseSyllabus={handleSelectCourseSyllabus}
+            />
+          )}
 
-        {currentScreen === 'contact' && (
-          <ContactScreen onOpenEnquire={handleOpenEnquire} />
-        )}
-      </main>
+          {currentScreen === 'contact' && (
+            <ContactScreen onOpenEnquire={handleOpenEnquire} />
+          )}
 
-      {/* Global Institution Footer */}
-      <Footer
-        onNavigate={handleNavigate}
-        onOpenEnquire={() => handleOpenEnquire()}
-      />
+          {currentScreen === 'admin' && (
+            <AdminPortalScreen onNavigate={handleNavigate} />
+          )}
+        </main>
 
-      {/* Floating WhatsApp Quick Action Widget */}
-      <WhatsAppWidget />
+        {/* Global Institution Footer */}
+        <Footer
+          onNavigate={handleNavigate}
+          onOpenEnquire={() => handleOpenEnquire()}
+        />
 
-      {/* Modal: Admissions & Course Enquiry */}
-      <EnquiryModal
-        isOpen={enquiryModalOpen}
-        onClose={() => setEnquiryModalOpen(false)}
-        defaultCourseId={enquiryCourseId}
-        defaultMode={enquiryMode}
-      />
+        {/* Modal: Admissions & Course Enquiry */}
+        <EnquiryModal
+          isOpen={enquiryModalOpen}
+          onClose={() => setEnquiryModalOpen(false)}
+          defaultCourseId={enquiryCourseId}
+          defaultMode={enquiryMode}
+        />
 
-      {/* Modal: Detailed Course Syllabus & Module Checklist */}
-      <SyllabusModal
-        course={selectedCourseForSyllabus}
-        onClose={() => setSelectedCourseForSyllabus(null)}
-        onEnquireCourse={(courseId) => {
-          handleOpenEnquire(courseId, 'enquiry');
-        }}
-      />
-    </div>
+        {/* Modal: Detailed Course Syllabus & Module Checklist */}
+        <SyllabusModal
+          course={selectedCourseForSyllabus}
+          onClose={() => setSelectedCourseForSyllabus(null)}
+          onEnquireCourse={(courseId) => {
+            handleOpenEnquire(courseId, 'enquiry');
+          }}
+        />
+      </div>
+    </GoogleSheetsProvider>
   );
 }
