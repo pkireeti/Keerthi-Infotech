@@ -75,7 +75,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <img
             alt="Keerthi Infotech Computer Education Official Logo"
             className="h-11 sm:h-12 md:h-14 w-auto object-contain transition-transform group-hover:scale-[1.02]"
-            src="/keerthi-logo.svg"
+            src="/keerthi-logo.jpeg"
           />
         </button>
 
