@@ -22,6 +22,10 @@ import {
   Info,
   Code,
   Copy,
+  Eye,
+  EyeOff,
+  Key,
+  ShieldAlert,
 } from 'lucide-react';
 import { ScreenType } from '../types';
 import { getGoogleClientId } from '../config/google-auth';
@@ -57,6 +61,24 @@ export const AdminPortalScreen: React.FC<AdminPortalScreenProps> = ({ onNavigate
     fetchRows,
   } = useGoogleSheets();
 
+  // Staff Authentication & Lock State
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [staffToken, setStaffToken] = useState<string>('');
+  const [passcodeInput, setPasscodeInput] = useState<string>('');
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [rememberMe, setRememberMe] = useState<boolean>(true);
+  const [authError, setAuthError] = useState<string>('');
+  const [isVerifyingAuth, setIsVerifyingAuth] = useState<boolean>(true);
+  const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
+
+  // Change Password State
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState<boolean>(false);
+  const [currentPasswordInput, setCurrentPasswordInput] = useState<string>('');
+  const [newPasswordInput, setNewPasswordInput] = useState<string>('');
+  const [confirmPasswordInput, setConfirmPasswordInput] = useState<string>('');
+  const [isChangingPassword, setIsChangingPassword] = useState<boolean>(false);
+  const [changePasswordError, setChangePasswordError] = useState<string>('');
+
   const [inquiries, setInquiries] = useState<ServerInquiry[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSyncingPending, setIsSyncingPending] = useState<boolean>(false);
@@ -71,14 +93,54 @@ export const AdminPortalScreen: React.FC<AdminPortalScreenProps> = ({ onNavigate
   const [showWebhookGuide, setShowWebhookGuide] = useState<boolean>(false);
   const [copiedScript, setCopiedScript] = useState<boolean>(false);
 
-  // 1. Fetch inquiries from 24/7 Cloud Database
-  const fetchInquiries = async () => {
+  // 1. Check & verify existing session on mount
+  useEffect(() => {
+    const stored =
+      localStorage.getItem('keerthi_staff_token') ||
+      sessionStorage.getItem('keerthi_staff_token');
+
+    if (!stored) {
+      setIsVerifyingAuth(false);
+      setIsAuthenticated(false);
+      return;
+    }
+
+    fetch('/api/staff/verify', {
+      headers: { 'x-staff-token': stored },
+    })
+      .then((res) => {
+        if (res.ok) {
+          setStaffToken(stored);
+          setIsAuthenticated(true);
+          fetchInquiries(stored);
+          fetchSettings(stored);
+        } else {
+          localStorage.removeItem('keerthi_staff_token');
+          sessionStorage.removeItem('keerthi_staff_token');
+          setIsAuthenticated(false);
+        }
+      })
+      .catch(() => {
+        setIsAuthenticated(false);
+      })
+      .finally(() => {
+        setIsVerifyingAuth(false);
+      });
+  }, []);
+
+  // 2. Fetch inquiries from 24/7 Cloud Database (Authenticated)
+  const fetchInquiries = async (token = staffToken) => {
+    if (!token) return;
     setIsLoading(true);
     try {
-      const res = await fetch('/api/inquiries');
+      const res = await fetch('/api/inquiries', {
+        headers: { 'x-staff-token': token },
+      });
       if (res.ok) {
         const data = await res.json();
         setInquiries(data.inquiries || []);
+      } else if (res.status === 401) {
+        handleLockPortal();
       }
     } catch (err) {
       console.error('Failed to load inquiries from server:', err);
@@ -87,10 +149,13 @@ export const AdminPortalScreen: React.FC<AdminPortalScreenProps> = ({ onNavigate
     }
   };
 
-  // 2. Fetch webhook settings
-  const fetchSettings = async () => {
+  // 3. Fetch webhook settings (Authenticated)
+  const fetchSettings = async (token = staffToken) => {
+    if (!token) return;
     try {
-      const res = await fetch('/api/settings');
+      const res = await fetch('/api/settings', {
+        headers: { 'x-staff-token': token },
+      });
       if (res.ok) {
         const data = await res.json();
         if (data.webhookUrl) setWebhookUrl(data.webhookUrl);
@@ -100,12 +165,111 @@ export const AdminPortalScreen: React.FC<AdminPortalScreenProps> = ({ onNavigate
     }
   };
 
-  useEffect(() => {
-    fetchInquiries();
-    fetchSettings();
-  }, []);
+  // 4. Staff Login Handler
+  const handleStaffLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!passcodeInput.trim()) {
+      setAuthError('Please enter your staff passcode.');
+      return;
+    }
 
-  // 3. Batch Sync all pending inquiries to Google Sheets
+    setIsLoggingIn(true);
+    setAuthError('');
+
+    try {
+      const res = await fetch('/api/staff/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: passcodeInput.trim() }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success && data.token) {
+        setStaffToken(data.token);
+        setIsAuthenticated(true);
+        setPasscodeInput('');
+        if (rememberMe) {
+          localStorage.setItem('keerthi_staff_token', data.token);
+        } else {
+          sessionStorage.setItem('keerthi_staff_token', data.token);
+        }
+        fetchInquiries(data.token);
+        fetchSettings(data.token);
+      } else {
+        setAuthError(data.error || 'Invalid passcode. Access restricted to Keerthi Infotech staff.');
+      }
+    } catch {
+      setAuthError('Unable to connect to verification server. Please try again.');
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  // 5. Lock Portal & Logout Handler
+  const handleLockPortal = () => {
+    localStorage.removeItem('keerthi_staff_token');
+    sessionStorage.removeItem('keerthi_staff_token');
+    setStaffToken('');
+    setIsAuthenticated(false);
+    setInquiries([]);
+    setStatusMessage(null);
+  };
+
+  // 6. Change Staff Passcode Handler
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setChangePasswordError('');
+
+    if (newPasswordInput.length < 4) {
+      setChangePasswordError('New passcode must be at least 4 characters long.');
+      return;
+    }
+    if (newPasswordInput !== confirmPasswordInput) {
+      setChangePasswordError('New passcodes do not match.');
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const res = await fetch('/api/staff/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-staff-token': staffToken,
+        },
+        body: JSON.stringify({
+          currentPassword: currentPasswordInput,
+          newPassword: newPasswordInput,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setStaffToken(data.token);
+        if (localStorage.getItem('keerthi_staff_token')) {
+          localStorage.setItem('keerthi_staff_token', data.token);
+        } else {
+          sessionStorage.setItem('keerthi_staff_token', data.token);
+        }
+        setShowChangePasswordModal(false);
+        setCurrentPasswordInput('');
+        setNewPasswordInput('');
+        setConfirmPasswordInput('');
+        setStatusMessage({
+          type: 'success',
+          text: 'Staff passcode updated successfully! Please note your new passcode.',
+        });
+      } else {
+        setChangePasswordError(data.error || 'Failed to update passcode.');
+      }
+    } catch {
+      setChangePasswordError('Failed to connect to server.');
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
+  // 7. Batch Sync all pending inquiries to Google Sheets
   const handleSyncPendingToSheets = async () => {
     if (!isConnected) {
       setStatusMessage({
@@ -148,7 +312,10 @@ export const AdminPortalScreen: React.FC<AdminPortalScreenProps> = ({ onNavigate
         // Mark as synced on server
         await fetch('/api/inquiries/mark-synced', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'x-staff-token': staffToken,
+          },
           body: JSON.stringify({ ids: successfullySyncedIds }),
         });
 
@@ -177,14 +344,17 @@ export const AdminPortalScreen: React.FC<AdminPortalScreenProps> = ({ onNavigate
     }
   };
 
-  // 4. Save Webhook URL
+  // 8. Save Webhook URL
   const handleSaveWebhook = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSavingWebhook(true);
     try {
       const res = await fetch('/api/settings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-staff-token': staffToken,
+        },
         body: JSON.stringify({ webhookUrl }),
       });
       if (res.ok) {
@@ -283,8 +453,243 @@ export const AdminPortalScreen: React.FC<AdminPortalScreenProps> = ({ onNavigate
     document.body.removeChild(link);
   };
 
+  // 1. Initial Authentication Check Loader
+  if (isVerifyingAuth) {
+    return (
+      <div className="w-full min-h-[calc(100vh-80px)] flex flex-col items-center justify-center p-6 text-center bg-[#f4f6fb]">
+        <div className="w-12 h-12 rounded-2xl bg-[#ffffff] border border-[#c0c7d1] shadow-xs flex items-center justify-center mb-4">
+          <RefreshCw className="w-6 h-6 text-[#00507d] animate-spin" />
+        </div>
+        <h2 className="text-base font-bold text-[#131b2e]">Verifying Staff Authorization...</h2>
+        <p className="text-xs text-[#5f6368] mt-1">Checking session credentials.</p>
+      </div>
+    );
+  }
+
+  // 2. Staff Authentication Lock Screen (Presented to all non-authenticated visitors)
+  if (!isAuthenticated) {
+    return (
+      <div className="w-full min-h-[calc(100vh-80px)] bg-[#f4f6fb] py-12 px-4 flex flex-col items-center justify-center">
+        {/* Top Back bar */}
+        <div className="w-full max-w-md mb-4 flex items-center justify-between">
+          <button
+            onClick={() => onNavigate('home')}
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#00507d] hover:underline cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Return to Public Website</span>
+          </button>
+          <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#ffebee] border border-[#ffcdd2] text-[#ba1a1a] text-xs font-bold">
+            <Lock className="w-3.5 h-3.5" />
+            <span>Restricted Access</span>
+          </div>
+        </div>
+
+        {/* Lock Screen Card */}
+        <div className="w-full max-w-md bg-[#ffffff] rounded-3xl border border-[#c0c7d1]/60 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+          {/* Header banner */}
+          <div className="bg-gradient-to-br from-[#131b2e] via-[#003859] to-[#00507d] p-6 text-center text-white relative">
+            <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center mx-auto mb-3 shadow-inner">
+              <ShieldCheck className="w-8 h-8 text-[#94ccff]" />
+            </div>
+            <h1 className="text-xl font-bold tracking-tight">Staff Admissions Portal</h1>
+            <p className="text-xs text-[#cde5ff] mt-1">
+              Keerthi Infotech Computer Education • Miyapur
+            </p>
+          </div>
+
+          {/* Form Content */}
+          <div className="p-6 md:p-8 space-y-5">
+            <div className="text-center space-y-1">
+              <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#f2f3ff] text-[#00507d] text-[11px] font-bold uppercase tracking-wider">
+                <Lock className="w-3 h-3" />
+                Staff Authentication Required
+              </div>
+              <p className="text-xs text-[#40474f] pt-1 leading-relaxed">
+                This portal contains confidential student admissions data, contact leads, and Google Sheets synchronization. Please enter your staff passcode.
+              </p>
+            </div>
+
+            {authError && (
+              <div className="p-3.5 rounded-xl bg-[#ffebee] border border-[#ffcdd2] text-[#ba1a1a] text-xs flex items-start gap-2.5 animate-in fade-in duration-150">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span className="font-semibold">{authError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleStaffLogin} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-[#131b2e] mb-1.5">
+                  Staff Passcode / PIN *
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#5f6368]">
+                    <Key className="w-4 h-4 text-[#00507d]" />
+                  </div>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    autoFocus
+                    required
+                    placeholder="Enter staff passcode..."
+                    value={passcodeInput}
+                    onChange={(e) => {
+                      setPasscodeInput(e.target.value);
+                      if (authError) setAuthError('');
+                    }}
+                    className="w-full pl-9 pr-10 py-3 rounded-xl border border-[#c0c7d1] bg-[#ffffff] text-sm text-[#131b2e] placeholder:text-[#80868b] focus:outline-hidden focus:border-[#00507d] focus:ring-2 focus:ring-[#00507d]/20 transition-all font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#5f6368] hover:text-[#131b2e] cursor-pointer"
+                    title={showPassword ? 'Hide passcode' : 'Show passcode'}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-xs">
+                <label className="flex items-center gap-2 cursor-pointer select-none text-[#40474f]">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="rounded border-[#c0c7d1] text-[#00507d] focus:ring-[#00507d]"
+                  />
+                  <span>Remember this browser</span>
+                </label>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoggingIn}
+                className="w-full py-3 px-4 rounded-xl bg-[#00507d] hover:bg-[#0369a1] text-white font-bold text-sm shadow-md transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+              >
+                {isLoggingIn ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Verifying Passcode...</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-4 h-4" />
+                    <span>Unlock Staff Portal</span>
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="pt-2 border-t border-[#c0c7d1]/40 text-center space-y-1.5">
+              <div className="text-[11px] text-[#5f6368]">
+                Initial default passcode: <code className="px-1.5 py-0.5 rounded bg-[#f2f3ff] text-[#00507d] font-bold font-mono">keerthi1999</code>
+              </div>
+              <div className="text-[10px] text-[#80868b]">
+                Authorized Keerthi Infotech faculty & admin personnel only.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 3. Authenticated Staff Portal
   return (
     <div className="w-full min-h-[calc(100vh-80px)] bg-[#f4f6fb] py-8 px-4 md:px-10">
+      {/* Change Staff Passcode Modal */}
+      {showChangePasswordModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-[#ffffff] rounded-2xl border border-[#c0c7d1] max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-[#c0c7d1]/50">
+              <div className="flex items-center gap-2">
+                <Key className="w-5 h-5 text-[#00507d]" />
+                <h3 className="text-base font-bold text-[#131b2e]">Change Staff Passcode</h3>
+              </div>
+              <button
+                onClick={() => setShowChangePasswordModal(false)}
+                className="text-xs text-[#5f6368] hover:text-[#131b2e] cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+
+            {changePasswordError && (
+              <div className="p-3 rounded-xl bg-[#ffebee] border border-[#ffcdd2] text-[#ba1a1a] text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{changePasswordError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleChangePassword} className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-[#131b2e] mb-1">
+                  Current Passcode *
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={currentPasswordInput}
+                  onChange={(e) => setCurrentPasswordInput(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-[#c0c7d1] text-xs focus:outline-hidden focus:border-[#00507d]"
+                  placeholder="Enter current passcode..."
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-[#131b2e] mb-1">
+                  New Passcode (min 4 characters) *
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={newPasswordInput}
+                  onChange={(e) => setNewPasswordInput(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-[#c0c7d1] text-xs focus:outline-hidden focus:border-[#00507d]"
+                  placeholder="Enter new secure passcode..."
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-[#131b2e] mb-1">
+                  Confirm New Passcode *
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={confirmPasswordInput}
+                  onChange={(e) => setConfirmPasswordInput(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-[#c0c7d1] text-xs focus:outline-hidden focus:border-[#00507d]"
+                  placeholder="Re-enter new passcode..."
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowChangePasswordModal(false)}
+                  className="px-4 py-2 rounded-xl border border-[#c0c7d1] text-xs font-bold text-[#131b2e] hover:bg-[#f2f3ff] cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isChangingPassword}
+                  className="px-4 py-2 rounded-xl bg-[#00507d] text-white text-xs font-bold hover:bg-[#0369a1] transition-all cursor-pointer disabled:opacity-60 flex items-center gap-1.5"
+                >
+                  {isChangingPassword ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Updating...</span>
+                    </>
+                  ) : (
+                    <span>Save New Passcode</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-[85rem] mx-auto space-y-6">
         {/* Top Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#ffffff] p-5 rounded-2xl border border-[#c0c7d1]/50 shadow-xs">
@@ -398,6 +803,29 @@ export const AdminPortalScreen: React.FC<AdminPortalScreenProps> = ({ onNavigate
                 </div>
               </div>
             )}
+
+            {/* Staff Security & Portal Lock Controls */}
+            <div className="flex items-center gap-1.5 pl-1 sm:pl-2 border-l border-[#c0c7d1]/50">
+              <button
+                onClick={() => {
+                  setChangePasswordError('');
+                  setShowChangePasswordModal(true);
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#c0c7d1] text-xs font-semibold text-[#131b2e] hover:bg-[#f2f3ff] transition-colors cursor-pointer"
+                title="Change Staff Passcode"
+              >
+                <Key className="w-3.5 h-3.5 text-[#00507d]" />
+                <span className="hidden sm:inline">Passcode</span>
+              </button>
+              <button
+                onClick={handleLockPortal}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#ffebee] border border-[#ffcdd2] text-[#ba1a1a] text-xs font-bold hover:bg-[#ffcdd2] transition-colors cursor-pointer"
+                title="Lock Staff Portal"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                <span>Lock</span>
+              </button>
+            </div>
           </div>
         </div>
 

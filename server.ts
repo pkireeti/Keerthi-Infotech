@@ -38,7 +38,7 @@ async function startServer() {
     fs.writeFileSync(INQUIRIES_FILE, JSON.stringify(inquiries, null, 2), 'utf-8');
   };
 
-  const getSettings = () => {
+  const getSettings = (): { webhookUrl: string; staffPassword?: string } => {
     if (!fs.existsSync(SETTINGS_FILE)) {
       return { webhookUrl: '' };
     }
@@ -49,8 +49,28 @@ async function startServer() {
     }
   };
 
-  const saveSettings = (settings: { webhookUrl: string }) => {
-    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2), 'utf-8');
+  const saveSettings = (settings: { webhookUrl?: string; staffPassword?: string }) => {
+    const current = getSettings();
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ ...current, ...settings }, null, 2), 'utf-8');
+  };
+
+  const getEffectiveStaffPassword = (): string => {
+    const settings = getSettings();
+    if (settings.staffPassword && typeof settings.staffPassword === 'string' && settings.staffPassword.trim() !== '') {
+      return settings.staffPassword.trim();
+    }
+    return process.env.STAFF_PORTAL_PASSWORD || 'keerthi1999';
+  };
+
+  // Staff Authentication Middleware
+  const requireStaffAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const token = req.headers['x-staff-token'] || req.headers['authorization'];
+    const effectivePass = getEffectiveStaffPassword();
+
+    if (token === effectivePass || token === `Bearer ${effectivePass}`) {
+      return next();
+    }
+    return res.status(401).json({ error: 'Unauthorized: Staff authentication required' });
   };
 
   // 1. Submit Inquiry 24/7 (Always open for any student / visitor from any device)
@@ -103,8 +123,39 @@ async function startServer() {
     }
   });
 
-  // 2. Fetch all inquiries (used by Staff Portal)
-  app.get('/api/inquiries', (req, res) => {
+  // Staff Authentication Endpoints
+  app.post('/api/staff/login', (req, res) => {
+    const { password } = req.body;
+    const effectivePass = getEffectiveStaffPassword();
+    if (!password || String(password).trim() !== effectivePass) {
+      return res.status(401).json({ error: 'Invalid staff passcode. Access denied.' });
+    }
+    return res.json({ success: true, token: effectivePass });
+  });
+
+  app.get('/api/staff/verify', requireStaffAuth, (req, res) => {
+    return res.json({ success: true, valid: true });
+  });
+
+  app.post('/api/staff/change-password', requireStaffAuth, (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+    const effectivePass = getEffectiveStaffPassword();
+    if (currentPassword !== effectivePass) {
+      return res.status(400).json({ error: 'Current password is incorrect' });
+    }
+    if (!newPassword || typeof newPassword !== 'string' || newPassword.trim().length < 4) {
+      return res.status(400).json({ error: 'New password must be at least 4 characters long' });
+    }
+    saveSettings({ staffPassword: newPassword.trim() });
+    return res.json({
+      success: true,
+      message: 'Staff password updated successfully',
+      token: newPassword.trim(),
+    });
+  });
+
+  // 2. Fetch all inquiries (used by Staff Portal - Protected)
+  app.get('/api/inquiries', requireStaffAuth, (req, res) => {
     try {
       const inquiries = getInquiries();
       return res.json({ inquiries });
@@ -113,8 +164,8 @@ async function startServer() {
     }
   });
 
-  // 3. Mark inquiries as synced to Google Sheets
-  app.post('/api/inquiries/mark-synced', (req, res) => {
+  // 3. Mark inquiries as synced to Google Sheets (Protected)
+  app.post('/api/inquiries/mark-synced', requireStaffAuth, (req, res) => {
     try {
       const { ids } = req.body;
       if (!Array.isArray(ids)) {
@@ -135,15 +186,17 @@ async function startServer() {
     }
   });
 
-  // 4. Webhook settings for optional instant Google Apps Script integration
-  app.get('/api/settings', (req, res) => {
-    return res.json(getSettings());
+  // 4. Webhook settings for optional instant Google Apps Script integration (Protected)
+  app.get('/api/settings', requireStaffAuth, (req, res) => {
+    const settings = getSettings();
+    // Do not return raw staff password in settings endpoint
+    return res.json({ webhookUrl: settings.webhookUrl || '' });
   });
 
-  app.post('/api/settings', (req, res) => {
+  app.post('/api/settings', requireStaffAuth, (req, res) => {
     const { webhookUrl } = req.body;
     saveSettings({ webhookUrl: String(webhookUrl || '').trim() });
-    return res.json({ success: true, settings: getSettings() });
+    return res.json({ success: true, settings: { webhookUrl: String(webhookUrl || '').trim() } });
   });
 
   // Mount Vite middleware for development
