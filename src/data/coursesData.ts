@@ -27,7 +27,7 @@ export const MANAGING_DIRECTOR_INFO: ManagingDirectorInfo = {
     },
   ],
   experience: '25+ Years of Educational Leadership & Student Mentorship',
-  photoUrl: '', // Photo slot: will display uploaded director image when set; elegant executive portrait frame rendered when empty
+  photoUrl: '/managing-director.png',
   quote:
     'Since founding Keerthi Infotech in 1999, our singular priority has been practical, job-ready competence. By uniting commerce discipline with cutting-edge IT applications, we empower every student with the technical mastery and confidence required to excel in modern industry.',
   visionPoints: [
