@@ -3,38 +3,13 @@ import { TimelineEra, CourseTrack, CourseItem, TestimonialItem, FAQItem, Managin
 export const MANAGING_DIRECTOR_INFO: ManagingDirectorInfo = {
   title: 'Managing Director',
   role: 'Founder & Head of Institution',
-  qualifications: ['M.B.A.', 'M.Com.', 'M.Phil.', 'PGDIT'],
-  qualificationDetails: [
-    {
-      code: 'M.B.A.',
-      title: 'Master of Business Administration',
-      description: 'Strategic management, organizational leadership, and industry enterprise workflows.',
-    },
-    {
-      code: 'M.Com.',
-      title: 'Master of Commerce',
-      description: 'Advanced corporate financial accounting, taxation standards, and auditing compliance.',
-    },
-    {
-      code: 'M.Phil.',
-      title: 'Master of Philosophy',
-      description: 'Applied business research methodology, pedagogical frameworks, and academic excellence.',
-    },
-    {
-      code: 'PGDIT',
-      title: 'Post Graduate Diploma in Information Technology',
-      description: 'Software development paradigms, database management, and modern computing architectures.',
-    },
-  ],
   experience: '25+ Years of Educational Leadership & Student Mentorship',
   photoUrl: '', // Photo slot: will display uploaded director image when set; elegant executive portrait frame rendered when empty
-  quote:
-    'Since founding Keerthi Infotech in 1999, our singular priority has been practical, job-ready competence. By uniting commerce discipline with cutting-edge IT applications, we empower every student with the technical mastery and confidence required to excel in modern industry.',
   visionPoints: [
     '25+ Years of Dedicated Educational Leadership since 1999',
-    'Unique multi-disciplinary expertise bridging Commerce, Business Management, and IT',
+    'Practical, job-oriented curriculum in Office Productivity, Accounting & Programming',
     '1:1 Personal mentorship approach for academic and employment success',
-    'Continuous curriculum innovation aligned with evolving corporate hiring needs',
+    'Continuous skill development aligned with evolving corporate hiring needs',
   ],
 };
 
@@ -53,7 +28,7 @@ export const INSTITUTION_INFO = {
   address: 'Mega Hills Complex, C1, NH65, Below Union Bank, Miyapur, Hyderabad, Telangana - 500049',
   landmark: 'Opposite Metro Pillar, Near Miyapur Bus Depot',
   officeHours: 'Monday – Friday (Weekends are Online Classes)',
-  logoUrl: '/keerthi-logo.png',
+  logoUrl: '/keerthi-logo.jpeg',
   heroLabImageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAqRcBNDZqc1UGncaixGlvi2wwFQzH0EAawls9GhuEBsuVSsBu8nhdXsty1ECtIuBK3FGvK2-llCcE4P8uQV5rT1hgMh5k0k16lTcwYfgiELYQXX2_iln7YUzZs0s0eX64f9PVxq8AZjbpD7gBbZTMExJXpsH72nXpr_CZzGZ_HK-cyO75JF7LfzpYMDNmI_aEpJZUB0hIpiz_7VWofPNyCqgDGipjEYMQNjGSM2_sMaXdMmBjpF3_M',
   panoramicFacilityImageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBIGOtV5S1gnNnmIA-81b0SzlmNha_WeHabMarQ0MV3_jsHf48k4p4Gy3r7ls3jL2GQ0lNwT_n6Ono7KILJGwcm7xHaMeckTDSCLALN6dWyW1rOWJwsxNEBxFrSV5FbsnoB_u38mLdcK4hx5P6cFpsJb97i2nyEpja4hLw-3W3Yp5BZpXPe2l8XOxqp7J8Pz-9nOlnP4jUnc4Wjvhhr6_FkuzCXgxrQB6Qk2d4V6THVcv89N6n7hm4j',
   managingDirector: MANAGING_DIRECTOR_INFO,
