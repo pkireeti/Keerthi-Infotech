@@ -54,3 +54,19 @@ export interface FAQItem {
   answer: string;
   category: string;
 }
+
+export interface ManagingDirectorInfo {
+  title: string;
+  role: string;
+  qualifications: string[];
+  qualificationDetails: {
+    code: string;
+    title: string;
+    description: string;
+  }[];
+  experience: string;
+  photoUrl?: string;
+  quote: string;
+  visionPoints: string[];
+}
+

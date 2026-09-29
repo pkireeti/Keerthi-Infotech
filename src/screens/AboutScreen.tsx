@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ScreenType } from '../types';
 import { INSTITUTION_INFO, TIMELINE_ERAS, COURSE_TRACKS } from '../data/coursesData';
+import { ManagingDirectorSection } from '../components/ManagingDirectorSection';
 import {
   Award,
   CheckCircle2,
@@ -273,6 +274,9 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({
           </div>
         </div>
       </section>
+
+      {/* Institutional Leadership & Managing Director Section */}
+      <ManagingDirectorSection onOpenEnquire={onOpenEnquire} />
 
       {/* Section 2: Pedagogical Rigor / Learning Methodology */}
       <section className="w-full py-12 md:py-16 px-4 md:px-10 bg-[#f2f3ff]">

@@ -1,6 +1,7 @@
 import React from 'react';
 import { ScreenType, CourseItem } from '../types';
 import { INSTITUTION_INFO, COURSE_TRACKS, COURSES_CATALOG, TESTIMONIALS } from '../data/coursesData';
+import { ManagingDirectorSection } from '../components/ManagingDirectorSection';
 import {
   Award,
   CheckCircle2,
@@ -244,6 +245,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </div>
         </div>
       </section>
+
+      {/* Institutional Leadership & Managing Director Spotlight */}
+      <ManagingDirectorSection onOpenEnquire={onOpenEnquire} />
 
       {/* Alumni Testimonials */}
       <section className="w-full py-12 md:py-16 px-4 md:px-10 bg-[#faf8ff]">
