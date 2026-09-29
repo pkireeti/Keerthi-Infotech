@@ -80,7 +80,7 @@ export const EnquiryModal: React.FC<EnquiryModalProps> = ({
         <div className="bg-[#f2f3ff] px-6 py-4 border-b border-[#c0c7d1]/60 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img
-              src="/keerthi-logo.jpeg"
+              src="/keerthi-logo.png"
               alt="Keerthi Infotech Logo"
               className="h-9 w-auto object-contain"
             />

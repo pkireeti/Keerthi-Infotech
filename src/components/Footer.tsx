@@ -24,7 +24,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenEnquire }) => 
               <img
                 alt="Keerthi Infotech Computer Education Official Logo"
                 className="h-12 w-auto object-contain"
-                src="/keerthi-logo.jpeg"
+                src="/keerthi-logo.png"
               />
             </div>
             <p className="text-[13px] text-[#40474f] leading-relaxed">

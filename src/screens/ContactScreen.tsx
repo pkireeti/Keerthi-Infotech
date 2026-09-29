@@ -98,7 +98,7 @@ export const ContactScreen: React.FC<ContactScreenProps> = ({ onOpenEnquire }) =
             <div className="p-6 md:p-8 rounded-2xl bg-[#ffffff] border border-[#c0c7d1]/50 shadow-xs space-y-6">
               <div className="flex items-center justify-start pb-2 border-b border-[#c0c7d1]/40">
                 <img
-                  src="/keerthi-logo.jpeg"
+                  src="/keerthi-logo.png"
                   alt="Keerthi Infotech Logo"
                   className="h-12 w-auto object-contain"
                 />

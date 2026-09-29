@@ -53,7 +53,7 @@ export const INSTITUTION_INFO = {
   address: 'Mega Hills Complex, C1, NH65, Below Union Bank, Miyapur, Hyderabad, Telangana - 500049',
   landmark: 'Opposite Metro Pillar, Near Miyapur Bus Depot',
   officeHours: 'Monday – Friday (Weekends are Online Classes)',
-  logoUrl: '/keerthi-logo.jpeg',
+  logoUrl: '/keerthi-logo.png',
   heroLabImageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAqRcBNDZqc1UGncaixGlvi2wwFQzH0EAawls9GhuEBsuVSsBu8nhdXsty1ECtIuBK3FGvK2-llCcE4P8uQV5rT1hgMh5k0k16lTcwYfgiELYQXX2_iln7YUzZs0s0eX64f9PVxq8AZjbpD7gBbZTMExJXpsH72nXpr_CZzGZ_HK-cyO75JF7LfzpYMDNmI_aEpJZUB0hIpiz_7VWofPNyCqgDGipjEYMQNjGSM2_sMaXdMmBjpF3_M',
   panoramicFacilityImageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBIGOtV5S1gnNnmIA-81b0SzlmNha_WeHabMarQ0MV3_jsHf48k4p4Gy3r7ls3jL2GQ0lNwT_n6Ono7KILJGwcm7xHaMeckTDSCLALN6dWyW1rOWJwsxNEBxFrSV5FbsnoB_u38mLdcK4hx5P6cFpsJb97i2nyEpja4hLw-3W3Yp5BZpXPe2l8XOxqp7J8Pz-9nOlnP4jUnc4Wjvhhr6_FkuzCXgxrQB6Qk2d4V6THVcv89N6n7hm4j',
   managingDirector: MANAGING_DIRECTOR_INFO,
