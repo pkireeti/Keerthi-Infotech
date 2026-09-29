@@ -62,6 +62,21 @@ async function startServer() {
     return process.env.STAFF_PORTAL_PASSWORD || 'keerthi1999';
   };
 
+  // Google Apps Script Webhook URL resolution:
+  // 1. Primary: Server environment variable (Railway / backend environment)
+  // 2. Fallback: Configured in settings.json
+  const getWebhookUrl = (): string => {
+    const envWebhook = process.env.GOOGLE_APPS_SCRIPT_WEBHOOK_URL;
+    if (envWebhook && typeof envWebhook === 'string' && envWebhook.trim().startsWith('http')) {
+      return envWebhook.trim();
+    }
+    const settings = getSettings();
+    if (settings.webhookUrl && typeof settings.webhookUrl === 'string' && settings.webhookUrl.trim().startsWith('http')) {
+      return settings.webhookUrl.trim();
+    }
+    return '';
+  };
+
   // Staff Authentication Middleware
   const requireStaffAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const token = req.headers['x-staff-token'] || req.headers['authorization'];
@@ -102,20 +117,66 @@ async function startServer() {
         syncedToGoogleSheets: false,
       };
 
+      // Always save locally to database first
       const inquiries = getInquiries();
       inquiries.unshift(newInquiry);
       saveInquiries(inquiries);
 
-      // Optional: If direct Google Apps Script Webhook is configured, forward silently in real-time
-      const settings = getSettings();
-      if (settings.webhookUrl && settings.webhookUrl.startsWith('http')) {
-        fetch(settings.webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newInquiry),
-        }).catch((err) => console.error('Webhook delivery error:', err));
+      // Webhook payload: using existing inquiry fields
+      const webhookPayload = {
+        timestamp: newInquiry.timestamp,
+        name: newInquiry.name,
+        phone: newInquiry.phone,
+        course: newInquiry.course,
+        message: newInquiry.message,
+        source: newInquiry.source,
+        id: newInquiry.id,
+        status: newInquiry.status,
+        createdAt: newInquiry.createdAt,
+      };
+
+      // Forward to Google Apps Script Webhook if configured
+      const targetWebhookUrl = getWebhookUrl();
+      if (targetWebhookUrl) {
+        // Send HTTP POST asynchronously so Google Sheets latency or downtime doesn't impact customer enquiry response
+        (async () => {
+          try {
+            console.log(`[Webhook] Forwarding enquiry ${newInquiry.id} to Google Apps Script...`);
+            const webhookRes = await fetch(targetWebhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(webhookPayload),
+              redirect: 'follow',
+            });
+
+            if (webhookRes.ok) {
+              console.log(`[Webhook] Successfully forwarded enquiry ${newInquiry.id} to Google Sheets (Status: ${webhookRes.status}).`);
+              // Mark as synced locally in database
+              try {
+                const current = getInquiries();
+                const updated = current.map((item: any) =>
+                  item.id === newInquiry.id ? { ...item, syncedToGoogleSheets: true } : item
+                );
+                saveInquiries(updated);
+              } catch (updateErr) {
+                console.error('[Webhook] Error marking inquiry synced locally:', updateErr);
+              }
+            } else {
+              const resBody = await webhookRes.text().catch(() => '');
+              console.warn(`[Webhook] Google Apps Script responded with HTTP ${webhookRes.status}: ${resBody}`);
+            }
+          } catch (webhookErr: any) {
+            console.error(
+              `[Webhook] Failed to deliver enquiry ${newInquiry.id} to Google Apps Script:`,
+              webhookErr?.message || webhookErr
+            );
+          }
+        })();
+      } else {
+        console.log('[Webhook] No GOOGLE_APPS_SCRIPT_WEBHOOK_URL configured. Inquiry saved locally.');
       }
 
+      // Return success response to the customer immediately
       return res.status(201).json({ success: true, inquiry: newInquiry });
     } catch (err: any) {
       console.error('Error recording student inquiry:', err);
@@ -189,8 +250,15 @@ async function startServer() {
   // 4. Webhook settings for optional instant Google Apps Script integration (Protected)
   app.get('/api/settings', requireStaffAuth, (req, res) => {
     const settings = getSettings();
-    // Do not return raw staff password in settings endpoint
-    return res.json({ webhookUrl: settings.webhookUrl || '' });
+    const hasEnvWebhook = Boolean(
+      process.env.GOOGLE_APPS_SCRIPT_WEBHOOK_URL &&
+      process.env.GOOGLE_APPS_SCRIPT_WEBHOOK_URL.trim().startsWith('http')
+    );
+    // Never expose raw server environment variables to the browser
+    return res.json({
+      webhookUrl: settings.webhookUrl || '',
+      hasEnvWebhook,
+    });
   });
 
   app.post('/api/settings', requireStaffAuth, (req, res) => {
