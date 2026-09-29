@@ -3,38 +3,15 @@ import { TimelineEra, CourseTrack, CourseItem, TestimonialItem, FAQItem, Managin
 export const MANAGING_DIRECTOR_INFO: ManagingDirectorInfo = {
   title: 'Managing Director',
   role: 'Founder & Head of Institution',
-  qualifications: ['M.B.A.', 'M.Com.', 'M.Phil.', 'PGDIT'],
-  qualificationDetails: [
-    {
-      code: 'M.B.A.',
-      title: 'Master of Business Administration',
-      description: 'Strategic management, organizational leadership, and industry enterprise workflows.',
-    },
-    {
-      code: 'M.Com.',
-      title: 'Master of Commerce',
-      description: 'Advanced corporate financial accounting, taxation standards, and auditing compliance.',
-    },
-    {
-      code: 'M.Phil.',
-      title: 'Master of Philosophy',
-      description: 'Applied business research methodology, pedagogical frameworks, and academic excellence.',
-    },
-    {
-      code: 'PGDIT',
-      title: 'Post Graduate Diploma in Information Technology',
-      description: 'Software development paradigms, database management, and modern computing architectures.',
-    },
-  ],
   experience: '25+ Years of Educational Leadership & Student Mentorship',
   photoUrl: '/managing-director.png',
   quote:
     'Since founding Keerthi Infotech in 1999, our singular priority has been practical, job-ready competence. By uniting commerce discipline with cutting-edge IT applications, we empower every student with the technical mastery and confidence required to excel in modern industry.',
   visionPoints: [
     '25+ Years of Dedicated Educational Leadership since 1999',
-    'Unique multi-disciplinary expertise bridging Commerce, Business Management, and IT',
+    'Practical, job-oriented curriculum in Office Productivity, Accounting & Programming',
     '1:1 Personal mentorship approach for academic and employment success',
-    'Continuous curriculum innovation aligned with evolving corporate hiring needs',
+    'Continuous skill development aligned with evolving corporate hiring needs',
   ],
 };
 

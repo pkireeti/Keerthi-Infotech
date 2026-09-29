@@ -1,17 +1,14 @@
 import React, { useState } from 'react';
 import { MANAGING_DIRECTOR_INFO, INSTITUTION_INFO } from '../data/coursesData';
 import {
-  GraduationCap,
   Award,
   BookOpen,
   Briefcase,
   CheckCircle2,
   Calendar,
   Phone,
-  MessageSquare,
   Upload,
   Camera,
-  Sparkles,
   ShieldCheck,
   User,
 } from 'lucide-react';
@@ -48,21 +45,21 @@ export const ManagingDirectorSection: React.FC<ManagingDirectorSectionProps> = (
         {/* Section Header */}
         <div className="max-w-3xl space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#dae2fd] text-[#00507d] text-xs font-bold uppercase tracking-wider shadow-2xs">
-            <GraduationCap className="w-4 h-4 text-[#00507d]" />
-            <span>Institutional Leadership & Academic Excellence</span>
+            <Award className="w-4 h-4 text-[#00507d]" />
+            <span>Institutional Leadership & Student Mentorship</span>
           </div>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-[#131b2e] tracking-tight font-sans">
             Desk of the Managing Director
           </h2>
           <p className="text-[17px] text-[#40474f] leading-relaxed">
-            Mentoring students in computer applications, commerce accounting, and career-oriented digital technologies with academic rigor and personal dedication since 1999.
+            Mentoring students in computer applications, commerce accounting, and career-oriented digital technologies with personal dedication and practical rigor since 1999.
           </p>
         </div>
 
         {/* Main Leadership Card */}
         <div className="bg-[#ffffff] rounded-3xl border border-[#c0c7d1]/50 shadow-sm overflow-hidden p-6 md:p-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-            {/* Left: Photo Frame & Credentials Showcase */}
+            {/* Left: Photo Frame Showcase */}
             <div className="lg:col-span-5 flex flex-col items-center">
               {/* Executive Portrait Frame */}
               <div className="w-full max-w-sm relative">
@@ -122,8 +119,8 @@ export const ManagingDirectorSection: React.FC<ManagingDirectorSectionProps> = (
                       <div className="text-xs font-black tracking-wider text-[#131b2e] uppercase">
                         Managing Director
                       </div>
-                      <div className="text-[11px] font-bold text-[#00507d] mt-0.5">
-                        M.B.A. • M.Com. • M.Phil. • PGDIT
+                      <div className="text-[11px] font-semibold text-[#00507d] mt-0.5">
+                        Founder & Head of Institution
                       </div>
                     </div>
                   </div>
@@ -151,7 +148,7 @@ export const ManagingDirectorSection: React.FC<ManagingDirectorSectionProps> = (
               </div>
             </div>
 
-            {/* Right: Qualifications, Narrative & Vision */}
+            {/* Right: Leadership Tenets & Institutional Mission */}
             <div className="lg:col-span-7 space-y-6">
               {/* Role Title */}
               <div className="space-y-1.5 border-b border-[#c0c7d1]/40 pb-5">
@@ -171,61 +168,30 @@ export const ManagingDirectorSection: React.FC<ManagingDirectorSectionProps> = (
                 </p>
               </div>
 
-              {/* Qualifications Showcase Grid */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="text-xs font-bold uppercase tracking-wider text-[#40474f] flex items-center gap-1.5">
-                    <GraduationCap className="w-4 h-4 text-[#00507d]" />
-                    <span>Academic & Professional Qualifications</span>
-                  </div>
-                  <span className="text-[11px] text-[#00507d] font-semibold">
-                    Multi-Discipline Competence
-                  </span>
+              {/* Institutional Focus Overview */}
+              <div className="p-5 rounded-2xl bg-[#faf8ff] border border-[#c0c7d1]/40 space-y-2">
+                <div className="text-xs font-bold uppercase tracking-wider text-[#00507d] flex items-center gap-1.5">
+                  <Award className="w-4 h-4 text-[#00507d]" />
+                  <span>Educational Commitment</span>
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {MANAGING_DIRECTOR_INFO.qualificationDetails.map((q, idx) => (
-                    <div
-                      key={idx}
-                      className="p-3.5 rounded-xl bg-[#faf8ff] border border-[#c0c7d1]/50 hover:bg-[#f2f3ff] transition-colors space-y-1 shadow-2xs"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 rounded-md bg-[#00507d] text-[#ffffff] font-mono text-xs font-bold">
-                          {q.code}
-                        </span>
-                        <h4 className="text-xs font-bold text-[#131b2e] leading-snug">
-                          {q.title}
-                        </h4>
-                      </div>
-                      <p className="text-[11px] text-[#5f6368] leading-relaxed pt-0.5">
-                        {q.description}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Director's Vision Quote */}
-              <div className="p-5 rounded-2xl bg-gradient-to-r from-[#dae2fd]/40 to-[#cde5ff]/30 border-l-4 border-[#00507d] space-y-2">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-[#00507d] uppercase tracking-wider">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Director's Message</span>
-                </div>
-                <blockquote className="text-sm md:text-[15px] italic text-[#131b2e] leading-relaxed font-serif">
-                  "{MANAGING_DIRECTOR_INFO.quote}"
-                </blockquote>
+                <p className="text-sm text-[#40474f] leading-relaxed">
+                  Dedicated to providing individualized hands-on practical training that transforms foundational knowledge into career-ready capability. Our classroom-lab integrated approach ensures students gain real problem-solving confidence.
+                </p>
               </div>
 
               {/* Core Leadership Highlights */}
-              <div className="space-y-2.5 pt-1">
+              <div className="space-y-3 pt-1">
                 <div className="text-xs font-bold uppercase tracking-wider text-[#40474f]">
-                  Key Leadership Tenets
+                  Key Institutional Tenets
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-[#131b2e]">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-[#131b2e]">
                   {MANAGING_DIRECTOR_INFO.visionPoints.map((point, index) => (
-                    <div key={index} className="flex items-start gap-2">
+                    <div
+                      key={index}
+                      className="p-3.5 rounded-xl bg-[#ffffff] border border-[#c0c7d1]/50 flex items-start gap-2.5 shadow-2xs"
+                    >
                       <CheckCircle2 className="w-4 h-4 text-[#00507d] shrink-0 mt-0.5" />
-                      <span className="leading-snug">{point}</span>
+                      <span className="leading-relaxed font-medium">{point}</span>
                     </div>
                   ))}
                 </div>
